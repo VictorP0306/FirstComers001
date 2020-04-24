@@ -9,12 +9,10 @@
 import javax.swing.*;
 
 public class Main {
-    private static FirstComers game;
     private static View view;
 
     public static void main(String[] args) {
-        game = new FirstComers(5, 1);
-        //view = new View(game);
+        FirstComers game = new FirstComers(5, 1);
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {

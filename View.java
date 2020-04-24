@@ -2,35 +2,41 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
 public class View extends JFrame {
     private FirstComers game;
     private JButton[] tBtns;
     private JButton[][] btns;
+    private int firstOrSecond;
     private int gameSize;
     private int gameSpaceCount;
     private final int maxSizeDesk = 11;
     private boolean isEditHeader;
     private boolean isBuild;
     private boolean isSolution;
+    private View mainForm;
+    private JPanel workPanel;
+    private Settings settingsForm = null;
 
     public View(FirstComers game) {
         this.game = game;
+        this.firstOrSecond = 0;
         this.gameSize = game.getSize();
         this.gameSpaceCount = game.getSpaceCount();
         this.isEditHeader = false;
         this.isBuild = false;
         this.isSolution = false;
+        this.mainForm = this;
 
         setTitle("Первые встречные");
-        setSize(600, 500);
+        setSize(500, 531);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         getContentPane().setLayout(new BorderLayout());
-        setDefaultLookAndFeelDecorated(true);
         setVisible(true);
 
         createMenu();
-//        createMainPanel();
         createToolPanel();
         createWorkPanel();
 
@@ -38,10 +44,32 @@ public class View extends JFrame {
 
         revalidate();
     }
+
+    public void newSet(Map<String, Integer> args) {
+        for (Map.Entry<String, Integer> entry : args.entrySet()) {
+            if (entry.getKey().equals("Game")) {
+                firstOrSecond = entry.getValue();
+            } else if (entry.getKey().equals("Size")) {
+                gameSize = entry.getValue();
+            } else if (entry.getKey().equals("Space")) {
+                gameSpaceCount = entry.getValue();
+            }
+        }
+
+        if (firstOrSecond == 0) {
+            game = new FirstComers(gameSize, gameSpaceCount);
+        } else {
+            game = new FirstComers(gameSize, gameSpaceCount);
+        }
+
+        init();
+    }
+
     private void init() {
         int letterCount = gameSize - gameSpaceCount;
-        for (int i = 0; i < 9; i++) {
-            tBtns[i].setEnabled(i < letterCount);
+        for (int i = 0; i < 8; i++) {
+            JButton btn = tBtns[i];
+            btn.setEnabled(i < letterCount);
         }
 
         for (int row = 0; row < maxSizeDesk; row++) {
@@ -68,6 +96,9 @@ public class View extends JFrame {
                 btn.setEnabled(isEnable);
             }
         }
+        isEditHeader = false;
+        isBuild = false;
+        isSolution = false;
     }
 
     private void createMenu() {
@@ -124,7 +155,8 @@ public class View extends JFrame {
         //Настройка
         JMenuItem editSettings = new JMenuItem("Настройки");
         menuEdit.add(editSettings);
-        editSettings.setEnabled(false);
+//        editSettings.setEnabled(false);
+        editSettings.addActionListener(new SettingsAction());
 
         //==========
         //Помощь
@@ -137,14 +169,15 @@ public class View extends JFrame {
         helpAbout.setMnemonic('О');
         helpAbout.addActionListener(new AboutAction(this));
     }
+
     private void createToolPanel() {
         JToolBar toolBar = new JToolBar();
         add(toolBar, BorderLayout.NORTH);
         tBtns = new JButton[12];
         ToolButton toolButton = new ToolButton("-", 9);
         toolBar.add(toolButton);
-        for (int i = 0; i < 9; i++) {
-            toolButton = new ToolButton(Character.toString((char) ('A'+i)), i);
+        for (int i = 0; i < 8; i++) {
+            toolButton = new ToolButton(Character.toString((char) ('A' + i)), i);
             toolBar.add(toolButton);
         }
         toolBar.addSeparator();
@@ -154,32 +187,41 @@ public class View extends JFrame {
         toolButton = new ToolButton("<-", 11);
         toolBar.add(toolButton);
     }
+
     private void createWorkPanel() {
-        JPanel workPanel = new JPanel(new GridBagLayout());
+        GridBagLayout gbl = new GridBagLayout();
+        workPanel = new JPanel(gbl);
         add(workPanel, BorderLayout.CENTER);
         JButton dButton;
         btns = new JButton[11][11];
         for (int row = 0; row < 11; row++) {
             for (int col = 0; col < 11; col++) {
-                 dButton = new DesktopButton(" ", row, col);
-                 workPanel.add(dButton, newConstrains(row, col));
+                dButton = new DesktopButton(" ", row, col);
+                workPanel.add(dButton, newConstrains(row, col));
             }
         }
     }
+
     private GridBagConstraints newConstrains(int row, int col) {
         GridBagConstraints gbc = new GridBagConstraints();
+        gbc.weightx = 0.5;
+        gbc.weighty = 0.5;
         gbc.gridy = row;
         gbc.gridx = col;
         gbc.gridheight = 1;
         gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.BOTH;
         return gbc;
     }
+
     private void setHeader(int side, int index) {
         if (isBuild || isSolution || !isEditHeader) return;
     }
+
     private void setToolButton(int key) {
         if (isBuild || isSolution) return;
-    }
+     }
+
     private void setDeskButton(int row, int col) {
         if (isBuild || isSolution || isEditHeader) return;
     }
@@ -199,6 +241,7 @@ public class View extends JFrame {
             });
         }
     }
+
     class DesktopButton extends JButton {
         private final int row;
         private final int col;
@@ -231,6 +274,7 @@ public class View extends JFrame {
 
     class AboutAction implements ActionListener {
         JFrame mainForm;
+
         public AboutAction(JFrame mainForm) {
             this.mainForm = mainForm;
         }
@@ -238,10 +282,28 @@ public class View extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             JOptionPane.showMessageDialog(mainForm,
-                    new String[] {"Первые встречные",
+                    new String[]{"Первые встречные",
                             "(C) Панин Виктор 2020 г."},
                     "О программе",
                     JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    class SettingsAction implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (settingsForm == null) {
+                settingsForm = new Settings(mainForm);
+            }
+
+            HashMap<String, Integer> args = new HashMap<String, Integer>();
+            args.put("Game", firstOrSecond);
+            args.put("Size", gameSize);
+            args.put("Space", gameSpaceCount);
+            settingsForm.setArgs(args);
+
+            settingsForm.setVisible(true);
         }
     }
 }
