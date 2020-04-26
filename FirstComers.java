@@ -16,11 +16,13 @@ public class FirstComers {
     public int getSpaceCount() {
         return spaceCount;
     }
-
     public int getDesk(int row, int col) {
         return desk.getCell(row, col);
     }
     public int getHeader(int side, int h) {
         return header[side][h];
+    }
+    public void setHeader(int side, int h, int value) {
+        header[side][h] = value;
     }
 }
