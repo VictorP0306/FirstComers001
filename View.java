@@ -1,7 +1,12 @@
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,7 +20,7 @@ public class View extends JFrame {
     private boolean isEditHeader;
     private boolean isBuild;
     private boolean isSolution;
-    private View mainForm;
+    private final View mainForm;
     private JPanel workPanel;
     private Settings settingsForm = null;
     private JPopupMenu popupMenu;
@@ -49,11 +54,11 @@ public class View extends JFrame {
 
     public void newSet(Map<String, Integer> args) {
         for (Map.Entry<String, Integer> entry : args.entrySet()) {
-            if (entry.getKey().equals("Game")) {
+            if (entry.getKey().toUpperCase().equals("GAME")) {
                 firstOrSecond = entry.getValue();
-            } else if (entry.getKey().equals("Size")) {
+            } else if (entry.getKey().toUpperCase().equals("SIZE")) {
                 gameSize = entry.getValue();
-            } else if (entry.getKey().equals("Space")) {
+            } else if (entry.getKey().toUpperCase().equals("SPACE")) {
                 gameSpaceCount = entry.getValue();
             }
         }
@@ -61,12 +66,11 @@ public class View extends JFrame {
         if (firstOrSecond == 0) {
             game = new FirstComers(gameSize, gameSpaceCount);
         } else {
-            game = new FirstComers(gameSize, gameSpaceCount);
+            game = new SecondComers(gameSize, gameSpaceCount);
         }
 
         init();
     }
-
     public String getS(int key) {
         String result = " ";
         if (key == -1) {
@@ -78,6 +82,7 @@ public class View extends JFrame {
         }
         return result;
     }
+
     private void init() {
 
         for (int row = 0; row < maxSizeDesk; row++) {
@@ -104,12 +109,11 @@ public class View extends JFrame {
                 btn.setEnabled(isEnable);
             }
         }
-        isEditHeader = false;
         isBuild = false;
         isSolution = false;
+        setNoEdit();
         showWorkSpace();
     }
-
     private void showWorkSpace() {
         //header
         for (int i = 1; i <= gameSize; i++) {
@@ -136,7 +140,6 @@ public class View extends JFrame {
             mE[i].getComponent().setVisible((i - 2) < letterCount);
         }
     }
-
     private void createMenu() {
         JMenuBar mainMenu = new JMenuBar();
         setJMenuBar(mainMenu);
@@ -148,17 +151,30 @@ public class View extends JFrame {
         //Новый
         JMenuItem fileNew = new JMenuItem("Новый");
         menuFile.add(fileNew);
-        fileNew.setEnabled(false);
-        //!!!
+        fileNew.setMnemonic('Н');
+        fileNew.setAccelerator(KeyStroke.getKeyStroke("ctrl N"));
+        fileNew.setIcon(new ImageIcon("src/res/new.png"));
+        fileNew.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                newSet(new HashMap<>());
+                init();
+            }
+        });
         //Открыть
         JMenuItem fileOpen = new JMenuItem("Открыть");
         menuFile.add(fileOpen);
-        fileOpen.setEnabled(false);
+        fileOpen.setMnemonic('О');
+        fileOpen.setAccelerator(KeyStroke.getKeyStroke("ctrl O"));
+        fileOpen.setIcon(new ImageIcon("src/res/open.png"));
+        fileOpen.addActionListener(new OpenAction());
         //Сохранить
         JMenuItem fileSave = new JMenuItem("Сохранить");
         menuFile.add(fileSave);
-        fileSave.setEnabled(false);
-        //!!!
+        fileSave.setMnemonic('С');
+        fileSave.setAccelerator(KeyStroke.getKeyStroke("ctrl S"));
+        fileSave.setIcon(new ImageIcon("src/res/save.png"));
+        fileSave.addActionListener(new SaveAction());
         //---------
         menuFile.addSeparator();
         //Выход
@@ -245,7 +261,11 @@ public class View extends JFrame {
         helpAbout.setMnemonic('О');
         helpAbout.addActionListener(new AboutAction(this));
     }
-
+    private void setNoEdit() {
+        selectRow = -1;
+        selectCol = -1;
+        isEditHeader = false;
+    }
     private void createPopupmenu() {
         popupMenu = new JPopupMenu();
         PuMenuItem mi;
@@ -260,24 +280,6 @@ public class View extends JFrame {
         }
         popupMenu.getInvoker();
     }
-    private void createToolPanel() {
-        JToolBar toolBar = new JToolBar();
-        add(toolBar, BorderLayout.NORTH);
-//        tBtns = new JButton[12];
-        ToolButton toolButton = new ToolButton("-", 9);
-        toolBar.add(toolButton);
-        for (int i = 0; i < 8; i++) {
-            toolButton = new ToolButton(Character.toString((char) ('A' + i)), i);
-            toolBar.add(toolButton);
-        }
-        toolBar.addSeparator();
-        toolButton = new ToolButton("X", 10);
-        toolBar.add(toolButton);
-        toolBar.addSeparator();
-        toolButton = new ToolButton("<-", 11);
-        toolBar.add(toolButton);
-    }
-
     private void createWorkPanel() {
         GridBagLayout gbl = new GridBagLayout();
         workPanel = new JPanel(gbl);
@@ -291,7 +293,6 @@ public class View extends JFrame {
             }
         }
     }
-
     private GridBagConstraints newConstrains(int row, int col) {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.weightx = 0.5;
@@ -303,45 +304,24 @@ public class View extends JFrame {
         gbc.fill = GridBagConstraints.BOTH;
         return gbc;
     }
-
-    private void setToolButton(int key) {
-        if (isBuild || isSolution) return;
-     }
-
-    private void setDeskButton(int row, int col) {
-        if (isBuild || isSolution || isEditHeader) return;
-    }
     private void setKeyPUM(ActionEvent e, int key) {
         if (selectRow == -1 || selectCol == -1) { return; }
 
         if (selectRow == 0) {
-            game.setHeader(Desk.SIDEUP, selectCol, key);
+            game.setHeader(Desk.SIDEUP, selectCol-1, key);
         } else if (selectRow == gameSize + 1) {
-            game.setHeader(Desk.SIDEDOWN, selectCol, key);
+            game.setHeader(Desk.SIDEDOWN, selectCol-1, key);
         } else if (selectCol == 0) {
-            game.setHeader(Desk.SIDELEFT, selectRow, key);
+            game.setHeader(Desk.SIDELEFT, selectRow-1, key);
         } else if (selectCol == gameSize + 1) {
-            game.setHeader(Desk.SIDEDOWN, selectRow, key);
+            game.setHeader(Desk.SIDERIGHT, selectRow-1, key);
+        } else {
+            game.setDesk(selectRow-1, selectCol-1, key);
         }
         btns[selectRow][selectCol].setText(getS(key));
 
         selectRow = -1;
         selectCol = -1;
-    }
-    class ToolButton extends JToggleButton {
-        private final int key;
-
-        public ToolButton(String text, int key) {
-            super(text);
-            this.key = key;
-//            tBtns[key] = this;
-            addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    setToolButton(key);
-                }
-            });
-        }
     }
 
     class DesktopButton extends JButton {
@@ -365,7 +345,18 @@ public class View extends JFrame {
             });
         }
     }
-
+    class PuMenuItem extends JMenuItem {
+        private int key;
+        public PuMenuItem (int key) {
+            this.key = key;
+            addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    setKeyPUM(e, key);
+                }
+            });
+        }
+    }
     class AboutAction implements ActionListener {
         JFrame mainForm;
 
@@ -382,7 +373,6 @@ public class View extends JFrame {
                     JOptionPane.INFORMATION_MESSAGE);
         }
     }
-
     class SettingsAction implements ActionListener {
 
         @Override
@@ -400,16 +390,134 @@ public class View extends JFrame {
             settingsForm.setVisible(true);
         }
     }
-    class PuMenuItem extends JMenuItem {
-        private int key;
-        public PuMenuItem (int key) {
-            this.key = key;
-            addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    setKeyPUM(e, key);
+    class OpenAction implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (isBuild || isSolution) return;
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Select file");
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Text (*.txt)", "TXT");
+            fileChooser.setFileFilter(filter);
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            int result = fileChooser.showOpenDialog(mainForm);
+            if (result == JFileChooser.APPROVE_OPTION) {
+//                    mainObject.OpenFile(fileChooser.getSelectedFile().getAbsolutePath());
+                String fileName = fileChooser.getSelectedFile().getAbsolutePath();
+                char[] buffer = new char[120]; // 9 * 9 + 9 * 4
+                int countRead = 0;
+                try {
+                    FileReader in = new FileReader(fileName);
+                    countRead = in.read(buffer);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return;
                 }
-            });
+
+                if (buffer[0] == 'F') {
+//                        openFirstGames(buffer, countRead);
+                    if (countRead < 3 ) {
+                        System.out.println("Error file format");
+                        return;
+                    }
+                    int size = Integer.parseInt(Character.toString(buffer[1]));
+                    int numCount = Integer.parseInt(Character.toString(buffer[2]));
+                    if (countRead == 3 + size * 4 || countRead == 3 + size * 4 + size * size) {
+                    } else {
+                        System.out.println("Error file format");
+                        return;
+                    }
+                    if (numCount == size - 1 || numCount == size - 2) {
+                    } else {
+                        System.out.println("Error file format");
+                        return;
+                    }
+//                    game = new FirstComers(size, size - numCount);
+                    Map<String, Integer> args = new HashMap<>();
+                    args.put("Game", 0);
+                    args.put("Size", size);
+                    args.put("Space", size - numCount);
+                    newSet(args);
+                    for (int i = 0; i < 4; i++) {
+                        for (int j = 0; j < size; j++) {
+                            int index = 3 + i * size + j;
+                            int v = Integer.parseInt(Character.toString(buffer[index]));
+                            game.setHeader(i, j, v);
+                        }
+                    }
+                    if (countRead == 3 + size * 4 + size * size) {
+                        int offset = 3 + size * 4;
+                        for (int row = 0; row < size; row++) {
+                            for (int col = 0; col < size; col++) {
+                                int index = offset + row * size + col;
+                                int v = Integer.parseInt(Character.toString(buffer[index]));
+                                game.setDesk(row, col, v);
+                            }
+                        }
+                    }
+                    firstOrSecond = 0;
+                    gameSize = size;
+                    gameSpaceCount = size - numCount;
+                    isBuild = false;
+                    isSolution = false;
+                    init();
+                } else {
+                    //            openSecondCounter(buffer);
+                    System.out.println("Error file format");
+                    return;
+                }
+            }
+        }
+    }
+    class SaveAction implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (isSolution || isBuild) return;
+            boolean flagEdit = isEditHeader;
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Select file");
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Text (*.txt)", "TXT");
+            fileChooser.setFileFilter(filter);
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            int result = fileChooser.showSaveDialog(mainForm);
+            if (result == JFileChooser.APPROVE_OPTION) {
+//                    mainObject.SaveFile(fileChooser.getSelectedFile().getAbsolutePath());
+                String fileName = fileChooser.getSelectedFile().getAbsolutePath();
+                try {
+                    FileWriter out = new FileWriter(fileName);
+                    out.write("F");
+                    out.write(Integer.toString(gameSize));
+                    out.write(Integer.toString(gameSize - gameSpaceCount));
+                    for (int side = 0; side < 4; side++) {
+                        for (int i = 0; i < gameSize; i++) {
+                            out.write(Integer.toString(game.getHeader(side, i)));
+                        }
+                    }
+                    boolean flagIsEmpty = true;
+                    for (int row = 0; row < gameSize; row++) {
+                        for (int col = 0; col < gameSize; col++) {
+                            if (game.getDesk(row, col) != 0) {
+                                flagIsEmpty = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (!flagIsEmpty) {
+                        for (int row = 0; row < gameSize; row++) {
+                            for (int col = 0; col < gameSize; col++) {
+                                out.write(Integer.toString(game.getDesk(row, col)));
+                            }
+                        }
+                    }
+                    out.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    return;
+                }
+            }
+            if (flagEdit) {
+                isEditHeader = false;
+                showWorkSpace();
+            }
         }
     }
 }

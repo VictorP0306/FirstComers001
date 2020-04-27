@@ -22,6 +22,9 @@ public class FirstComers {
     public int getHeader(int side, int h) {
         return header[side][h];
     }
+    public void setDesk(int row, int col, int value) {
+        desk.setCell(row, col, value);
+    }
     public void setHeader(int side, int h, int value) {
         header[side][h] = value;
     }
