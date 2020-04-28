@@ -21,6 +21,7 @@ public class View extends JFrame {
     private boolean isBuild;
     private boolean isSolution;
     private final View mainForm;
+    private final JMenuBar mainMenu;
     private JPanel workPanel;
     private Settings settingsForm = null;
     private JPopupMenu popupMenu;
@@ -43,6 +44,7 @@ public class View extends JFrame {
         getContentPane().setLayout(new BorderLayout());
         setVisible(true);
 
+        this.mainMenu = new JMenuBar();
         createMenu();
         createPopupmenu();
         createWorkPanel();
@@ -141,9 +143,22 @@ public class View extends JFrame {
         }
     }
     private void createMenu() {
-        JMenuBar mainMenu = new JMenuBar();
         setJMenuBar(mainMenu);
+        createFileMenu();
+        createEditMenu();
 
+        //==========
+        //Помощь
+        JMenu menuHelp = new JMenu("Помощь");
+        mainMenu.add(menuHelp);
+        menuHelp.setMnemonic('о');
+        //О программе
+        JMenuItem helpAbout = new JMenuItem("О программе");
+        menuHelp.add(helpAbout);
+        helpAbout.setMnemonic('О');
+        helpAbout.addActionListener(new AboutAction(this));
+    }
+    private void createFileMenu() {
         //==========
         JMenu menuFile = new JMenu("Файл");
         mainMenu.add(menuFile);
@@ -188,7 +203,8 @@ public class View extends JFrame {
                 System.exit(0);
             }
         });
-
+    }
+    private void createEditMenu() {
         //==========
         //Правка
         JMenu menuEdit = new JMenu("Правка");
@@ -197,7 +213,17 @@ public class View extends JFrame {
         //Отмена
         JMenuItem editUndo = new JMenuItem("Отмена");
         menuEdit.add(editUndo);
-        editUndo.setEnabled(false);
+        editUndo.setMnemonic('О');
+        editUndo.setIcon(new ImageIcon("src/res/cancel.png"));
+        editUndo.setAccelerator(KeyStroke.getKeyStroke("ctrl Z"));
+        editUndo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (isSolution || isBuild || isEditHeader) { return; }
+                game.undo();
+                showWorkSpace();
+            }
+        });
         //----------
         menuEdit.addSeparator();
         //----------
@@ -249,17 +275,6 @@ public class View extends JFrame {
         editSettings.setMnemonic('Н');
         editSettings.setIcon(new ImageIcon("src/res/options.png"));
         editSettings.addActionListener(new SettingsAction());
-
-        //==========
-        //Помощь
-        JMenu menuHelp = new JMenu("Помощь");
-        mainMenu.add(menuHelp);
-        menuHelp.setMnemonic('о');
-        //О программе
-        JMenuItem helpAbout = new JMenuItem("О программе");
-        menuHelp.add(helpAbout);
-        helpAbout.setMnemonic('О');
-        helpAbout.addActionListener(new AboutAction(this));
     }
     private void setNoEdit() {
         selectRow = -1;
@@ -450,7 +465,7 @@ public class View extends JFrame {
                             for (int col = 0; col < size; col++) {
                                 int index = offset + row * size + col;
                                 int v = Integer.parseInt(Character.toString(buffer[index]));
-                                game.setDesk(row, col, v);
+                                game.setDesk(row, col, v, false);
                             }
                         }
                     }
