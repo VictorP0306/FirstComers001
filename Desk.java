@@ -29,14 +29,14 @@ public class Desk {
     }
     public void setCell(int row, int col, int value) { desk[row][col] = value; }
 
-    public int getLine(int side, int row, int col) {
-        int newRow = row;
-        int newCol = col;
+    public int getLine(int side, int number, int depth) {
+        int newRow = number;
+        int newCol = depth;
         switch (side) {
             case SIDELEFT: { break; }
-            case SIDERIGHT: { newCol = size - col - 1; break; }
-            case SIDEUP: { newRow = col; newCol = row; break; }
-            case SIDEDOWN: { newRow = col; newCol = size - row - 1; break; }
+            case SIDERIGHT: { newCol = size - depth - 1; break; }
+            case SIDEUP: { newRow = depth; newCol = number; break; }
+            case SIDEDOWN: { newRow = size - depth - 1; newCol = number; break; }
             default:
                 throw new IllegalStateException("Unexpected (side) value: " + side);
         }
@@ -55,7 +55,7 @@ public class Desk {
         }
         desk[newRow][newCol] = value;
     }
-    public int getRow(int side, int row, int col) {
+    public int getNumber(int side, int row, int col) {
         int newRow = row;
         switch (side) {
             case SIDELEFT: { break; }
@@ -67,7 +67,7 @@ public class Desk {
         }
         return newRow;
     }
-    public int getCol(int side, int row, int col) {
+    public int getDepth(int side, int row, int col) {
         int newCol = col;
         switch (side) {
             case SIDELEFT: { break; }

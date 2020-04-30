@@ -27,10 +27,11 @@ public class View extends JFrame {
     private JPopupMenu popupMenu;
     private int selectRow = -1;
     private int selectCol = -1;
+    private final Color bgColor;
 
     public View(FirstComers game) {
         this.game = game;
-        this.firstOrSecond = 0;
+        setFirstOrSecond();
         this.gameSize = game.getSize();
         this.gameSpaceCount = game.getSpaceCount();
         this.isEditHeader = false;
@@ -48,6 +49,7 @@ public class View extends JFrame {
         createMenu();
         createPopupmenu();
         createWorkPanel();
+        bgColor = btns[0][0].getBackground(); //getForeground();
 
         init();
 
@@ -335,8 +337,139 @@ public class View extends JFrame {
         }
         btns[selectRow][selectCol].setText(getS(key));
 
+        if (checkError(selectRow-1, selectCol-1) == 2) {
+            if (checkFinish()) {
+                if (! checkError()) {
+                    win();
+                }
+            }
+        }
+
         selectRow = -1;
         selectCol = -1;
+    }
+    private boolean checkError() {
+        boolean error = false;
+        for (int row = 0; row < gameSize; row++) {
+            for (int col = 0; col < gameSize; col++) {
+                error = error || checkError(row, col) == 1;
+            }
+        }
+        return error;
+    }
+    private int checkError(int row, int col) {
+        int result = 0;
+        final int error = 1;
+        final int checkAll = 2;
+        int value = game.getDesk(row, col);
+        if (value == 0) {
+            btns[row+1][col+1].setBackground(bgColor);
+            return result;
+        }
+        int countRow = value == -1 ? gameSpaceCount : 1;
+        int countCol = countRow;
+        int countAllRow = gameSize - gameSpaceCount;
+        int countAllCol = countAllRow;
+        for (int i = 0; i < gameSize; i++) {
+            int v = game.getDesk(i, col);
+            if (v > 0) { countAllRow--; }
+            // проверяем по вертикали есть ли такая цифра как в текущей клктке или количество пустых более gameSpaceCount
+            if (i != row) {
+                if (v == value) {
+                    countRow--;
+                    if (countRow <= 0) {
+                        result = error;
+                        break;
+                    }
+                }
+            }
+            v = game.getDesk(row, i);
+            if (v > 0) { countAllCol--; }
+            // проверяем по горизонтали
+            if (i != col) {
+                if (v == value) {
+                    countCol--;
+                    if (countCol <= 0) {
+                        result = error;
+                        break;
+                    }
+                }
+            }
+        }
+        if (result == error) {
+            btns[row+1][col+1].setBackground(Color.RED);
+            return error;
+        }
+
+        if (countAllRow == 0 && countAllCol == 0) {
+            result = checkAll;
+        }
+
+        if (value > 0) {
+            loopA:
+            for (int side = 0; side < 4; side++) {
+                int number = game.getNumber(side, row, col);
+                int depth = game.getDepth(side, row, col);
+                int h = game.getHeader(side, side <= 1 ? col : row);
+                if (h <= 0) {
+                    continue;
+                }
+                if (result == checkAll) {
+                    // все цифры присутствуют надо проверить первую и проверить на финиш
+                    // жесткая проверка
+                    for (int i = 0; i < 1 + gameSpaceCount; i++) {
+                        int v = game.getLine(side, number, i);
+                        if (v <= 0) {
+                            continue;
+                        } else if (v == h) {
+                            break;
+                        } else {
+                            result = error;
+                            break loopA;
+                        }
+                    }
+                } else {
+                    // мягкая проверка (при встрече пустышки - двлее)
+                    for (int i = 0; i < 1 + gameSpaceCount; i++) {
+                        int v = game.getLine(side, number, i);
+                        if (v == 0) {
+                            break;
+                        } else if (v == -1) {
+                            continue;
+                        } else if (v == h) {
+                            break;
+                        } else {
+                            result = error;
+                            break loopA;
+                        }
+                    }
+                }
+            }
+        }
+        btns[row+1][col+1].setBackground(result == error ? Color.RED : bgColor);
+        return result;
+    }
+    private void setFirstOrSecond() {
+        this.firstOrSecond = 0;
+    }
+    private boolean checkFinish() {
+        int allCount = gameSize * (gameSize - gameSpaceCount);
+        for (int row = 0; row < gameSize; row++) {
+            for (int col = 0; col < gameSize; col++) {
+                int value = game.getDesk(row, col);
+                if (value > 0) { allCount--; }
+            }
+        }
+        if (allCount == 0) {
+            return true;
+        }
+        return false;
+    }
+    private void win() {
+        JOptionPane.showMessageDialog(mainForm,
+                "ПОБЕДА !!!",
+                "Первые встречные",
+                JOptionPane.WARNING_MESSAGE);
     }
 
     class DesktopButton extends JButton {

@@ -39,6 +39,9 @@ public class FirstComers {
     public void setHeader(int side, int h, int value) {
         header[side][h] = value;
     }
+    public int getNumber(int side, int row, int col) { return desk.getNumber(side, row, col); }
+    public int getDepth(int side, int row, int col) { return desk.getDepth(side, row, col); }
+    public int getLine(int side, int number, int depth) { return desk.getLine(side, number, depth); }
     public void undo() {
         if (history.isEmpty()) { return; }
         this.desk = history.pop();
