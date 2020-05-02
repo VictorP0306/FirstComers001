@@ -28,7 +28,6 @@ public class Desk {
         return desk[row][col];
     }
     public void setCell(int row, int col, int value) { desk[row][col] = value; }
-
     public int getLine(int side, int number, int depth) {
         int newRow = number;
         int newCol = depth;

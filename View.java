@@ -3,7 +3,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -28,6 +27,8 @@ public class View extends JFrame {
     private int selectRow = -1;
     private int selectCol = -1;
     private final Color bgColor;
+    private WaitForm waitForm;
+    private volatile Exchange exchange;
 
     public View(FirstComers game) {
         this.game = game;
@@ -264,11 +265,13 @@ public class View extends JFrame {
         //Создать
         JMenuItem editBuild = new JMenuItem("Создать");
         menuEdit.add(editBuild);
-        editBuild.setEnabled(false);
+        editBuild.setEnabled(false); //bulb.png
         //Решить
         JMenuItem editSolution = new JMenuItem("Решить");
         menuEdit.add(editSolution);
-        editSolution.setEnabled(false);
+        editSolution.setMnemonic('е');
+        editSolution.setIcon(new ImageIcon("src/res/calculator.png"));
+        editSolution.addActionListener(new SolutionActon());
         //----------
         menuEdit.addSeparator();
         //Настройка
@@ -666,6 +669,52 @@ public class View extends JFrame {
                 isEditHeader = false;
                 showWorkSpace();
             }
+        }
+    }
+    class SolutionActon implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            System.out.println("Start");
+            isSolution = true;
+            exchange = new Exchange(game, 1);
+
+            Thread thread = new Thread(new SeekASolution(exchange));
+            thread.start();
+
+            if (waitForm == null) {
+                waitForm = new WaitForm(mainForm, exchange);
+            } else {
+                waitForm.setExchange(exchange);
+            }
+
+            isSolution = false;
+            synchronized (exchange) {
+                if (exchange.isStopSolution()) {
+//                    System.out.println("Прервано");
+                } else if (exchange.isSolutionFound()) {
+//                    System.out.println("Решено");
+                    Desk solution = exchange.getDesk();
+                    for (int row = 0; row < gameSize; row++) {
+                        for (int col = 0; col < gameSize; col++) {
+                            game.setDesk(row, col, solution.getCell(row, col), false);
+                        }
+                    }
+                    showWorkSpace();
+                } else if (exchange.getStopSolution()) {
+//                    System.out.println("Решения нет");
+                    JOptionPane.showMessageDialog(mainForm,
+                                    "Решения нет",
+                            "Первые встречные",
+                            JOptionPane.WARNING_MESSAGE);
+                } else {
+//                    System.out.println("Остановлено (непонятки)");
+                    JOptionPane.showMessageDialog(mainForm,
+                            "Ой",
+                            "Первые встречные",
+                            JOptionPane.WARNING_MESSAGE);
+                }
+            }
+            exchange = null;
         }
     }
 }

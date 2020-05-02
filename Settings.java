@@ -45,7 +45,7 @@ public class Settings extends JDialog {
         JLabel sizeLabel = new JLabel("Размер");
         sizePanel.add(sizeLabel);
         sizePanel.add(BoxLayoutUtils.createHorizontalStrut(12));
-        SpinnerNumberModel spm = new SpinnerNumberModel(5, 5, 9, 1);
+        SpinnerNumberModel spm = new SpinnerNumberModel(5, 3, 9, 1);
         sp = new JSpinner(spm);
         sizePanel.add(sp);
         mainPanel.add(BoxLayoutUtils.createVerticalStrut(12));
