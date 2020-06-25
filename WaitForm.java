@@ -7,18 +7,20 @@ public class WaitForm extends JDialog {
     private volatile Exchange exchange;
     private final Timer timer;
     private final JLabel label;
+    private String textLabel;
 
     public WaitForm(JFrame parent, Exchange exchange) {
         super(parent);
         this.exchange = exchange;
 
-        setTitle("Первые встречные");
-        setSize(200, 150);
+        setTitle(exchange.getGame().getTitle());
+        setSize(250, 150);
         setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         getContentPane().setLayout(new BorderLayout());
         setModal(true);
 
-        label = new JLabel("Поиск решения...");
+        textLabel = exchange.getTextLabel();
+        label = new JLabel(textLabel);
         add(label, BorderLayout.CENTER);
         label.setHorizontalAlignment(JLabel.CENTER);
         JButton button = new JButton("Прервать");
@@ -33,6 +35,8 @@ public class WaitForm extends JDialog {
     }
     public void setExchange(Exchange exchange) {
         this.exchange = exchange;
+        this.textLabel = exchange.getTextLabel();
+        label.setText(this.textLabel);
         timer.start();
         setVisible(true);
     }
@@ -55,7 +59,7 @@ public class WaitForm extends JDialog {
                     timer.stop();
                     setVisible(false);
                 } else {
-                    label.setText("Поиск решения... - " + exchange.getProgress());
+                    label.setText(textLabel + " - " + exchange.getProgress());
                 }
             }
         }

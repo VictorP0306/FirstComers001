@@ -14,6 +14,8 @@ public class FirstComers {
         header = new int[4][size];
         history = new Stack<>();
     }
+
+    public String getTitle() { return "Первые встречные"; }
     public int getSize() {
         return size;
     }

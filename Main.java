@@ -12,7 +12,7 @@ public class Main {
     private static View view;
 
     public static void main(String[] args) {
-        FirstComers game = new FirstComers(5, 1);
+        FirstComers game = new FirstComers(3, 1);
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {

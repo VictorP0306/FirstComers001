@@ -6,10 +6,13 @@ public class Exchange {
     private FirstComers game;
     private int countSolution = 1;
     private Desk desk;
+    private int[][] header;
+    private String textLabel;
 
-    Exchange(FirstComers game, int countSolution) {
+    Exchange(FirstComers game, int countSolution, String textLabel) {
         this.game = game;
         this.countSolution = countSolution;
+        this.textLabel = textLabel;
     }
 
     public boolean isStopSolution() {
@@ -50,5 +53,14 @@ public class Exchange {
     }
     public void setDesk(Desk desk) {
         this.desk = desk;
+    }
+    public String getTextLabel() {
+        return textLabel;
+    }
+    public int[][] getHeader() {
+        return header;
+    }
+    public void setHeader(int[][] header) {
+        this.header = header;
     }
 }

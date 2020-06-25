@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +41,7 @@ public class View extends JFrame {
         this.isSolution = false;
         this.mainForm = this;
 
-        setTitle("Первые встречные");
+        setTitle(game.getTitle());
         setSize(500, 546);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         getContentPane().setLayout(new BorderLayout());
@@ -265,7 +266,9 @@ public class View extends JFrame {
         //Создать
         JMenuItem editBuild = new JMenuItem("Создать");
         menuEdit.add(editBuild);
-        editBuild.setEnabled(false); //bulb.png
+        editBuild.setMnemonic('С');
+        editBuild.setIcon(new ImageIcon("src/res/bulb.png"));
+        editBuild.addActionListener(new CreateAction());
         //Решить
         JMenuItem editSolution = new JMenuItem("Решить");
         menuEdit.add(editSolution);
@@ -471,7 +474,7 @@ public class View extends JFrame {
     private void win() {
         JOptionPane.showMessageDialog(mainForm,
                 "ПОБЕДА !!!",
-                "Первые встречные",
+                game.getTitle(),
                 JOptionPane.WARNING_MESSAGE);
     }
 
@@ -518,8 +521,7 @@ public class View extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             JOptionPane.showMessageDialog(mainForm,
-                    new String[]{"Первые встречные",
-                            "(C) Панин Виктор 2020 г."},
+                    "(C) Панин Виктор 2020 г.",
                     "О программе",
                     JOptionPane.INFORMATION_MESSAGE);
         }
@@ -674,9 +676,10 @@ public class View extends JFrame {
     class SolutionActon implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            System.out.println("Start");
+//            System.out.println("Start");
             isSolution = true;
-            exchange = new Exchange(game, 1);
+            exchange = new Exchange(game, 1, "Поиск решения...");
+            Date startTime = new Date();
 
             Thread thread = new Thread(new SeekASolution(exchange));
             thread.start();
@@ -687,6 +690,7 @@ public class View extends JFrame {
                 waitForm.setExchange(exchange);
             }
 
+            Date endTime = new Date();
             isSolution = false;
             synchronized (exchange) {
                 if (exchange.isStopSolution()) {
@@ -700,17 +704,81 @@ public class View extends JFrame {
                         }
                     }
                     showWorkSpace();
+                    long lT = (endTime.getTime() - startTime.getTime()) / 1000;
+                    String sT = Long.toString(lT) + " сек.";
+                    if (lT >= 60) {
+                        sT = Long.toString(lT / 60) + " мин. " + Long.toString(lT % 60) + " сек.";
+                    }
+                    JOptionPane.showMessageDialog(mainForm,
+                    "Решено за: " + sT,
+                            game.getTitle(),
+                            JOptionPane.WARNING_MESSAGE);
                 } else if (exchange.getStopSolution()) {
 //                    System.out.println("Решения нет");
                     JOptionPane.showMessageDialog(mainForm,
-                                    "Решения нет",
-                            "Первые встречные",
+                            "Решения нет",
+                            game.getTitle(),
                             JOptionPane.WARNING_MESSAGE);
                 } else {
 //                    System.out.println("Остановлено (непонятки)");
                     JOptionPane.showMessageDialog(mainForm,
                             "Ой",
-                            "Первые встречные",
+                            game.getTitle(),
+                            JOptionPane.WARNING_MESSAGE);
+                }
+            }
+            exchange = null;
+        }
+    }
+    class CreateAction implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            isSolution = true;
+            exchange = new Exchange(game, 1, "Создание головоломки...");
+            Date startTime = new Date();
+
+            Thread thread = new Thread(new CreatePazzle(exchange));
+            thread.start();
+
+            if (waitForm == null) {
+                waitForm = new WaitForm(mainForm, exchange);
+            } else {
+                waitForm.setExchange(exchange);
+            }
+
+            Date endTime = new Date();
+            isSolution = false;
+            synchronized (exchange) {
+                if (exchange.isStopSolution()) {
+//                    System.out.println("Прервано");
+                } else if (exchange.isSolutionFound()) {
+//                    System.out.println("Решено");
+                    showWorkSpace();
+                    long lT = (endTime.getTime() - startTime.getTime()) / 1000;
+                    String sT = Long.toString(lT) + " сек.";
+                    if (lT >= 60) {
+                        sT = Long.toString(lT / 60) + " мин. " + Long.toString(lT % 60) + " сек.";
+                    }
+                    JOptionPane.showMessageDialog(mainForm,
+                            "Создано за " + sT,
+                            game.getTitle(),
+                            JOptionPane.WARNING_MESSAGE);
+//                } else if (exchange.getStopSolution()) {
+////                    System.out.println("Решения нет");
+//                    JOptionPane.showMessageDialog(mainForm,
+//                            "Решения нет",
+//                            game.getTitle(),
+//                            JOptionPane.WARNING_MESSAGE);
+                } else if (exchange.isThereIsNoDecision()) {
+//                    JOptionPane.showMessageDialog(mainForm,
+//                            "Не смог!",
+//                            game.getTitle(),
+//                            JOptionPane.WARNING_MESSAGE);
+                } else {
+//                    System.out.println("Остановлено (непонятки)");
+                    JOptionPane.showMessageDialog(mainForm,
+                            "Ой",
+                            game.getTitle(),
                             JOptionPane.WARNING_MESSAGE);
                 }
             }

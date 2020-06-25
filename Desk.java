@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 public class Desk {
     public static final int SIDEUP = 0;
     public static final int SIDEDOWN = 1;
@@ -25,7 +27,20 @@ public class Desk {
     }
 
     public int getCell(int row, int col) {
-        return desk[row][col];
+//        return desk[row][col];
+
+//        if (row >= size || col >= size) {
+//            System.out.println("Error. row="+row+" col="+col);
+//            return 0;
+//        }
+        int v = 0;
+        try {
+            v = desk[row][col];
+        } catch (ArrayIndexOutOfBoundsException e) {
+//            System.out.println("size="+size+" row="+row+" col="+col);
+            e.printStackTrace();
+        }
+        return v;
     }
     public void setCell(int row, int col, int value) { desk[row][col] = value; }
     public int getLine(int side, int number, int depth) {
@@ -78,5 +93,19 @@ public class Desk {
         }
         return newCol;
 
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Desk{" +
+                "size=" + size +
+                ", spaceCount=" + spaceCount + "}\n");
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                sb.append(desk[i][j]);
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
     }
 }

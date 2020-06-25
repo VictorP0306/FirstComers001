@@ -4,28 +4,31 @@ public class SeekASolution implements Runnable {
     private int size;
     private int spaceCount;
     private int letterCount;
-    private int SolutionCount = 0;
+    private int solutionCount;
     private Desk desk;
 
     public SeekASolution(Exchange exchange) {
-        this.exchange = exchange;
+        setExchange(exchange);
     }
 
-    @Override
-    public void run() {
-//        synchronized (exchange) {
-//            if (exchange.isStopSolution()) {
-//                return;
-//            }
-//        }
-
-        //Start
+    public void setExchange(Exchange exchange) {
+        this.exchange = exchange;
         game = exchange.getGame();
         size = game.getSize();
         spaceCount = game.getSpaceCount();
         letterCount = size - spaceCount;
+    }
 
+    @Override
+    public void run() {
+
+        Logger logger = Logger.getInstance();
+        logger.write("Start: SeekASolution.run()");
+
+        exchange.setSolutionFound(false);
+        exchange.setThereIsNoDecision(false);
         desk = new Desk(size, spaceCount);
+        solutionCount = 0;
         Command command = Command.Check;
         int row = 0;
         int col = 0;
@@ -41,6 +44,9 @@ public class SeekASolution implements Runnable {
 
             progress++;
             if (progress >= 1000) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
                 synchronized (exchange) {
                     if (exchange.isStopSolution()) {
                         return;
@@ -49,6 +55,8 @@ public class SeekASolution implements Runnable {
                     progress = 0;
                 }
             }
+
+//            logger.write("command="+command.toString());
 
             switch (command) {
 
@@ -59,6 +67,7 @@ public class SeekASolution implements Runnable {
                     } else {
                         command = Command.NextLetter;
                     }
+//                    logger.write("row="+row+" col="+col+" letter="+letter+" state="+state+" command="+command.toString());
                     break;
                 }
 
@@ -69,6 +78,7 @@ public class SeekASolution implements Runnable {
                     } else {
                         command = Command.PreviousCell;
                     }
+//                    logger.write("row="+row+" col="+col+" letter="+letter+" state="+state+" command="+command.toString());
                     break;
                 }
 
@@ -80,16 +90,38 @@ public class SeekASolution implements Runnable {
                         letter = 0;
                         command = Command.Check;
                     } else {
-                        if (state) {
-                            synchronized (exchange) {
-                                exchange.setSolutionFound(true);
-                                exchange.setDesk(desk);
+                        //end desk
+//                        if (state) {
+                            //Solution!!!
+                            ++solutionCount;
+//                            logger.write(desk.toString());
+                            if (exchange.getCountSolution() == 1) {
+                                synchronized (exchange) {
+                                    exchange.setSolutionFound(true);
+                                    exchange.setDesk(desk);
+                                }
+//                                exchange = null;
+//                                logger.write("solutionCount="+solutionCount+" getCountSolution="+exchange.getCountSolution()+" new desk. return");
+                                return;
+                            } else {
+                                if (solutionCount == 1) {
+                                    //next
+                                    command = Command.PreviousCell;
+                                } else {
+                                    //Not solution
+                                    synchronized (exchange) {
+                                        exchange.setThereIsNoDecision(true);
+                                    }
+//                                    exchange = null;
+//                                    logger.write("solutionCount="+solutionCount+" return");
+                                    return;
+                                }
                             }
-                            break loop;
-                        } else {
-                            command = Command.PreviousCell;
-                        }
+//                        } else {
+//                            command = Command.PreviousCell;
+//                        }
                     }
+//                    logger.write("row="+row+" col="+col+" letter="+letter+" command="+command.toString());
                     break;
                 }
 
@@ -97,27 +129,35 @@ public class SeekASolution implements Runnable {
                     pos--;
                     row = pos / size;
                     col = pos % size;
-                    letter = desk.getCell(row, col);
                     if (pos >= 0) {
+                        letter = desk.getCell(row, col);
                         command = Command.NextLetter;
                     } else {
+                        //Not solution
                         synchronized (exchange) {
-                            exchange.setThereIsNoDecision(true);
+                            if (solutionCount == 1) {
+                                exchange.setSolutionFound(true);
+//                                logger.write("setSolutionFound=true");
+                            } else {
+                                exchange.setThereIsNoDecision(true);
+//                                logger.write("setThereIsNoDecision=true");
+                            }
                         }
-                        break loop;
+//                        exchange = null;
+                        return;
                     }
                     break;
                 }
                 default: {
-                    System.out.println("Что за команда: " + command + "?");
+//                    System.out.println("Что за команда: " + command + "?");
                     synchronized (exchange) {
                         exchange.setThereIsNoDecision(true);
                     }
-                    break loop;
+//                    exchange = null;
+                    return;
                 }
             }
         }
-        exchange = null;
     }
 
     boolean check(int row, int col, int letter) {
